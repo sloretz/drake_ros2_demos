@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import time
 
 import numpy
@@ -193,24 +194,33 @@ class JointStatePublisher(LeafSystem):
 
 
 if __name__ == '__main__':
-    sdf_file_path = FindResourceOrThrow(
-        "drake/manipulation/models/iiwa_description/iiwa7/"
-        "iiwa7_no_collision.sdf")
-    print(sdf_file_path)
+
+    this_dir = os.path.abspath(os.path.dirname(__file__))
+
+    # sdf_file_path = FindResourceOrThrow(
+    #     "drake/manipulation/models/iiwa_description/iiwa7/"
+    #     "iiwa7_no_collision.sdf")
+    # print(sdf_file_path)
+
+    sdf_file_path = os.path.join(this_dir, 'ur10.sdf')
+
+    with open(os.path.join(this_dir, 'ur10.sdf.in'), 'r') as file_in:
+        with open(sdf_file_path, 'w') as file_out:
+            file_out.write(file_in.read().replace('PWD_GOES_HERE', this_dir))
 
     builder = DiagramBuilder()
 
-    plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=0.01)
+    plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=0.001)
 
     parser = Parser(plant)
 
-    model_name = "iiwa"
+    model_name = "ur10"
     model = parser.AddModelFromFile(sdf_file_path, model_name)
     # print(repr(model))
     # print(dir(plant))
 
     # Weld to world so it doesn't fall through floor :D
-    base_frame = plant.GetFrameByName("iiwa_link_0", model)
+    base_frame = plant.GetFrameByName("base", model)
     X_WB = RigidTransform([0, 0, 0])
     plant.WeldFrames(plant.world_frame(), base_frame, X_WB)
 
