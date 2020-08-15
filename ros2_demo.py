@@ -287,14 +287,12 @@ if __name__ == '__main__':
         # TODO(sloretz) really need a spin_some in rclpy
         rclpy.spin_once(node, timeout_sec=0)
 
-        # TODO(sloretz) publish clock topic
+        # joint_states = JointStateMsg()
+        # # TODO(sloretz) shouldn't this be simulated time?
+        # joint_states.header.stamp = node.get_clock().now().to_msg()
 
-        joint_states = JointStateMsg()
-        # TODO(sloretz) shouldn't this be simulated time?
-        joint_states.header.stamp = node.get_clock().now().to_msg()
-
-        diagram_context = diagram.CreateDefaultContext()
-        plant_context = diagram.GetSubsystemContext(plant, diagram_context)
+        # diagram_context = diagram.CreateDefaultContext()
+        # plant_context = diagram.GetSubsystemContext(plant, diagram_context)
         # print(dir(plant_context))
         # print(plant.GetPositions(plant_context, model))
 
