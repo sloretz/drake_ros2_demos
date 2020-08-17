@@ -25,7 +25,7 @@
       <visual name='visual'>
         <geometry>
           <mesh>
-            <uri>file://PWD_GOES_HERE/meshes/base.dae</uri>
+            <uri>file://PWD_GOES_HERE/meshes/base.obj</uri>
           </mesh>
         </geometry>
       </visual>
@@ -54,7 +54,7 @@
       <visual name='visual'>
         <geometry>
           <mesh>
-            <uri>file://PWD_GOES_HERE/meshes/shoulder.dae</uri>
+            <uri>file://PWD_GOES_HERE/meshes/shoulder.obj</uri>
           </mesh>
         </geometry>
       </visual>
@@ -108,7 +108,7 @@
       <visual name='visual'>
         <geometry>
           <mesh>
-            <uri>file://PWD_GOES_HERE/meshes/upperarm.dae</uri>
+            <uri>file://PWD_GOES_HERE/meshes/upperarm.obj</uri>
           </mesh>
         </geometry>
       </visual>
@@ -161,7 +161,7 @@
       <visual name='visua'>
         <geometry>
           <mesh>
-            <uri>file://PWD_GOES_HERE/meshes/forearm.dae</uri>
+            <uri>file://PWD_GOES_HERE/meshes/forearm.obj</uri>
           </mesh>
         </geometry>
       </visual>
@@ -192,7 +192,7 @@
       <visual name='visual'>
         <geometry>
           <mesh>
-            <uri>file://PWD_GOES_HERE/meshes/wrist1.dae</uri>
+            <uri>file://PWD_GOES_HERE/meshes/wrist1.obj</uri>
           </mesh>
         </geometry>
       </visual>
@@ -223,7 +223,7 @@
       <visual name='visual'>
         <geometry>
           <mesh>
-            <uri>file://PWD_GOES_HERE/meshes/wrist2.dae</uri>
+            <uri>file://PWD_GOES_HERE/meshes/wrist2.obj</uri>
           </mesh>
         </geometry>
       </visual>
@@ -254,7 +254,7 @@
       <visual name='visual'>
         <geometry>
           <mesh>
-            <uri>file://PWD_GOES_HERE/meshes/wrist3.dae</uri>
+            <uri>file://PWD_GOES_HERE/meshes/wrist3.obj</uri>
           </mesh>
         </geometry>
       </visual>

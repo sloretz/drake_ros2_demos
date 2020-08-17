@@ -1,7 +1,7 @@
 # Blender MTL File: 'None'
 # Material Count: 3
 
-newmtl SWMaterial-0_001.001
+newmtl SWMaterial-0_001.002
 Ns 225.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.222745 0.222745 0.222745
@@ -11,7 +11,7 @@ Ni 1.000000
 d 1.000000
 illum 2
 
-newmtl SWMaterial-1_001.001
+newmtl SWMaterial-1_001.002
 Ns 225.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.392157 0.542745 0.640000
@@ -21,7 +21,7 @@ Ni 1.000000
 d 1.000000
 illum 2
 
-newmtl SWMaterial-2_001.001
+newmtl SWMaterial-2_001.002
 Ns 225.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.464314 0.464314 0.464314
