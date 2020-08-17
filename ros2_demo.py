@@ -235,16 +235,19 @@ if __name__ == '__main__':
     for i in range(plant.num_joints()):
         joints.append(plant.get_joint(JointIndex(i)))
 
-
     rclpy.init()
     node = rclpy.create_node('drake_demo')
 
     # Publish SDF content on robot_description topic
     latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
     description_publisher = node.create_publisher(StringMsg, 'robot_description', qos_profile=latching_qos)
+    msg = StringMsg()
+    with open(sdf_file_path, 'r') as sdf_file:
+        msg.data = sdf_file.read()
+    description_publisher.publish(msg)
 
     # Plubish joint states on joint_states topic
-    joint_states_publisher = node.create_publisher(JointStateMsg, 'joint_states', 1)
+    # joint_states_publisher = node.create_publisher(JointStateMsg, 'joint_states', 1)
 
     # clock_publisher = node.create_publisher(TimeMsg, 'clock', 1)
     # clock_system = SimulatorClock(publisher=clock_publisher, period_sec=1./1000)
@@ -274,19 +277,6 @@ if __name__ == '__main__':
     simulator = Simulator(diagram)
     simulator_context = simulator.get_mutable_context()
     simulator.set_target_realtime_rate(1.0)
-
-    # Now that simulator is set up, connect to ROS
-
-    msg = StringMsg()
-    with open(sdf_file_path, 'r') as sdf_file:
-        msg.data = sdf_file.read()
-
-    description_publisher.publish(msg)
-    # print(sdf_content)
-
-    joints = []
-    for i in range(plant.num_joints()):
-        joints.append(plant.get_joint(JointIndex(i)))
 
     # import code
     # code.interact(local=locals())
