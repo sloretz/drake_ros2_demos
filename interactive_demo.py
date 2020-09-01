@@ -50,27 +50,20 @@ class MakeRigidTransform(LeafSystem):
     def __init__(self):
         super().__init__()
 
-        print('here19')
         self._position_input_port = self.DeclareVectorInputPort(
             'position', BasicVector_[float](3))
 
-        print('here20')
         self._orientation_input_port = self.DeclareVectorInputPort(
             'orientation', BasicVector_[float](4))
-        print('here21')
 
         self.DeclareAbstractOutputPort(
             'transform',
             lambda: AbstractValue.Make(RigidTransform()),
             self._do_get_transform)
-        print('here18')
 
     def _do_get_transform(self, context, data):
-        # print('here')
         position = self._position_input_port.Eval(context)
-        # print('here1')
         orientation = self._orientation_input_port.Eval(context)
-        # print('here2')
 
         rotation = RotationMatrix(Quaternion(orientation))
         data.set_value(RigidTransform(rotation, position))
@@ -150,7 +143,6 @@ if __name__ == '__main__':
         parameters=diff_ik_parameters,
         robot_context=robot.CreateDefaultContext()
     )
-    print('here12')
 
     builder.AddSystem(integrator)
     builder.Connect(
@@ -158,7 +150,6 @@ if __name__ == '__main__':
         station.GetInputPort('iiwa_position')
         # plant.get_actuation_input_port(model)
     )
-    print('here13')
 
     # joints = []
     # for i in range(robot.num_joints()):
@@ -167,7 +158,6 @@ if __name__ == '__main__':
     rclpy.init()
     node = rclpy.create_node('interactive_demo')
 
-    print('here14')
     # Publish SDF content on robot_description topic
     # latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
     # description_publisher = node.create_publisher(StringMsg, 'robot_description', qos_profile=latching_qos)
@@ -200,31 +190,26 @@ if __name__ == '__main__':
     server = InteractiveMarkerServer(node, 'tool_tip_target')
     target_system = builder.AddSystem(MoveablePoint(server, tf_buffer))
 
-    print('here15')
 
     const_quaternion_wxyz = builder.AddSystem(
         ConstantVectorSource(numpy.array([1.0 , 0.0, 0.0, 0.0]))
     )
 
     make_rigid_transform = builder.AddSystem(MakeRigidTransform())
-    print('here3')
 
     builder.Connect(
         target_system.GetOutputPort('point'),
         make_rigid_transform.GetInputPort('position')
     )
-    print('here4')
 
     builder.Connect(
         const_quaternion_wxyz.get_output_port(0),
         make_rigid_transform.GetInputPort('orientation')
     )
-    print('here5')
     builder.Connect(
         make_rigid_transform.GetOutputPort('transform'),
         integrator.GetInputPort('X_WE_desired')
     )
-    print('here6')
 
     # TODO(sloretz) why can't Drake Visualizer be connected to ManipulationStation's scene graph?
     # ConnectDrakeVisualizer(builder, station.get_scene_graph())
@@ -234,37 +219,31 @@ if __name__ == '__main__':
         station.get_scene_graph(),
         station.GetOutputPort("pose_bundle"),
         zmq_url="new")
-    print('here7')
 
     constant_sys = builder.AddSystem(ConstantVectorSource(numpy.array([0.107])))
     builder.Connect(constant_sys.get_output_port(0),
                     station.GetInputPort("wsg_position"))
-    print('here8')
 
     diagram = builder.Build()
     simulator = Simulator(diagram)
     simulator_context = simulator.get_mutable_context()
     simulator.set_target_realtime_rate(1.0)
-    print('here9')
 
     # plant_context = diagram.GetSubsystemContext(plant, simulator_context)
     integrator_context = diagram.GetSubsystemContext(integrator, simulator_context)
     # integrator.SetPositions(integrator_context, plant.GetPositions(plant_context, model))
     station_context = station.GetMyMutableContextFromRoot(simulator_context)
 
-    print('here10')
     num_iiwa_joints = station.num_iiwa_joints()
     station.GetInputPort("iiwa_feedforward_torque").FixValue(
         station_context, numpy.zeros(num_iiwa_joints))
 
-    print('here11')
     q0 = station.GetOutputPort("iiwa_position_measured").Eval(
         station_context)
     integrator.get_mutable_parameters().set_nominal_joint_position(q0)
     integrator_context = integrator.GetMyMutableContextFromRoot(simulator_context)
     integrator.SetPositions(integrator_context, q0)
 
-    print('here12')
     while simulator_context.get_time() < 12345:
         simulator.AdvanceTo(simulator_context.get_time() + 0.1)
         # TODO(sloretz) really need a spin_some in rclpy
