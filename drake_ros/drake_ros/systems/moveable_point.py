@@ -40,8 +40,9 @@ class MoveablePoint(LeafSystem):
             self._do_get_point)
 
     def _do_get_point(self, context, data):
-        marker_value = context.get_abstract_state(int(self._marker_state)).get_value()
-        data.set_value(marker_value)
+        # marker_value = context.get_abstract_state(int(self._marker_state)).get_value()
+        marker_value = self._marker_point
+        data.SetFromVector(marker_value)
 
     def _feedback(self, feedback):
         if feedback.event_type != InteractiveMarkerFeedback.POSE_UPDATE:
@@ -63,7 +64,10 @@ class MoveablePoint(LeafSystem):
             return
 
         # TODO(sloretz) this is where I would set the value on an output port in a drake system
-        print(point_stamped)
+        # TODO(sloretz) thread safety?
+        self._marker_point[0] = point_stamped.point.x
+        self._marker_point[1] = point_stamped.point.y
+        self._marker_point[2] = point_stamped.point.z
 
     def _make_markers(self):
         int_marker = InteractiveMarker()
