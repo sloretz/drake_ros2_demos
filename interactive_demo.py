@@ -23,6 +23,7 @@ from pydrake.math import RotationMatrix
 # from pydrake.math import Quaternion
 from pydrake.multibody.parsing import Parser
 from pydrake.multibody.plant import AddMultibodyPlantSceneGraph
+from pydrake.multibody.tree import BodyIndex
 from pydrake.multibody.tree import JointIndex
 from pydrake.multibody.tree import WeldJoint
 from pydrake.systems.analysis import Simulator
@@ -32,6 +33,7 @@ from pydrake.systems.framework import LeafSystem
 from pydrake.systems.meshcat_visualizer import ConnectMeshcatVisualizer
 from pydrake.systems.primitives import ConstantValueSource
 from pydrake.systems.primitives import ConstantVectorSource
+from pydrake.systems.primitives import Demultiplexer
 
 import rclpy
 
@@ -44,6 +46,136 @@ from tf2_ros import TransformBroadcaster
 
 from pydrake.common import RandomDistribution
 from pydrake.systems.primitives import RandomSource
+
+
+class ForwardKinematics(LeafSystem):
+    """
+    Get forward kinematics of each joint on iiwa arm from manipulation station in world frame.
+
+    Offers something like the MultibodyPlant body_poses port.
+    """
+
+    def __init__(self, plant):
+        super().__init__()
+
+        # A multibody plant with a robot added to it
+        self._plant = plant
+        # Drake needs context to go along with a class instance
+        self._plant_context = self._plant.CreateDefaultContext()
+
+        num_positions = self._plant.num_positions()
+        print('making ForwardKinematics with num_positions', num_positions)
+
+        # Input: List of joint positions matching order known by plant
+        self._joint_positions_port = self.DeclareVectorInputPort(
+            'joint_positions', BasicVector_[float](num_positions))
+        # Output: Rigid transforms of each body in base frame
+        self.DeclareAbstractOutputPort(
+            'transforms',
+            lambda: AbstractValue.Make([RigidTransform()]),
+            self._do_forward_kinematics)
+
+    def _do_forward_kinematics(self, context, data):
+        joint_positions = self._joint_positions_port.Eval(context)
+
+        # print(joint_positions, self._plant.num_positions())
+        # Set the latest positions in the plant context
+        self._plant.SetPositions(self._plant_context, joint_positions)
+
+        world_frame = self._plant.world_frame()
+
+        transforms = []
+        for i in range(self._plant.num_bodies()):
+            body = self._plant.get_body(BodyIndex(i))
+
+            # calculate pose of body in world frame
+            body_frame = body.body_frame()
+            transforms.append(
+                self._plant.CalcRelativeTransform(
+                    self._plant_context, world_frame, body_frame))
+
+        data.set_value(transforms)
+
+
+class TruncateVector(LeafSystem):
+    """
+    Ignore some inputs from a vector system.
+    """
+
+    def __init__(self, num_inputs, num_outputs):
+        super().__init__()
+
+        if num_outputs > num_inputs:
+            raise ValueError('Must have more inputs than outputs')
+
+        self._num_outputs = num_outputs
+
+        self._input_port = self.DeclareVectorInputPort(
+            'input', BasicVector_[float](num_inputs))
+
+        self.DeclareVectorOutputPort(
+            'output', BasicVector_[float](num_outputs), self._truncate_output)
+
+    def _truncate_output(self, context, output):
+        in_vec = self._input_port.Eval(context)
+        output.SetFromVector(in_vec[:self._num_outputs])
+
+
+class PadVector(LeafSystem):
+    """
+    Add some constant values to pad a vector.
+    """
+
+    def __init__(self, num_inputs, num_outputs, output_value=0.0):
+        super().__init__()
+
+        if num_inputs > num_outputs:
+            raise ValueError('Must have more outputs than inputs')
+
+        self._difference = num_outputs - num_inputs
+        self._output_value = output_value
+
+        self._input_port = self.DeclareVectorInputPort(
+            'input', BasicVector_[float](num_inputs))
+
+        self.DeclareVectorOutputPort(
+            'output', BasicVector_[float](num_outputs), self._pad_output)
+
+    def _pad_output(self, context, output):
+        in_vec = self._input_port.Eval(context)
+        vector = [v for v in in_vec]
+        for i in range(self._difference):
+            vector.append(self._output_value)
+        output.SetFromVector(vector)
+
+
+class PadStartOfVector(LeafSystem):
+    """
+    Add some constant values to pad a vector.
+    """
+
+    def __init__(self, num_inputs, num_outputs, output_value=0.0):
+        super().__init__()
+
+        if num_inputs > num_outputs:
+            raise ValueError('Must have more outputs than inputs')
+
+        self._difference = num_outputs - num_inputs
+        self._output_value = output_value
+
+        self._input_port = self.DeclareVectorInputPort(
+            'input', BasicVector_[float](num_inputs))
+
+        self.DeclareVectorOutputPort(
+            'output', BasicVector_[float](num_outputs), self._pad_output)
+
+    def _pad_output(self, context, output):
+        in_vec = self._input_port.Eval(context)
+        vector = [output] * self._difference
+        vector = [v for v in in_vec]
+        for v in in_vec:
+            vector.append(v)
+        output.SetFromVector(vector)
 
 
 class MakeRigidTransform(LeafSystem):
@@ -333,51 +465,102 @@ if __name__ == '__main__':
     # ik_or_home_sys = builder.AddSystem(IsIKWorking(len(iiwa14_velocity_limits)))
     # ConstantValueSource(AbstractValue.Make(False)))
 
-    # joints = []
-    # for i in range(robot.num_joints()):
-    #     joints.append(robot.get_joint(JointIndex(i)))
+    # Create robot description with re-written paths
+    this_dir = os.path.abspath(os.path.dirname(__file__))
+    sdf_file_path = os.path.join(this_dir, 'iiwa14_no_collision.sdf')
+    with open(os.path.join(this_dir, 'iiwa14_no_collision.sdf.in'), 'r') as file_in:
+        with open(sdf_file_path, 'w') as file_out:
+            file_out.write(file_in.read().replace('PWD_GOES_HERE', this_dir))
+
+    joint_names = [
+        'iiwa_joint_1',
+        'iiwa_joint_2',
+        'iiwa_joint_3',
+        'iiwa_joint_4',
+        'iiwa_joint_5',
+        'iiwa_joint_6',
+        'iiwa_joint_7']
+    joints = []
+    for name in joint_names:
+        joints.append(station.get_controller_plant().GetJointByName(name))
 
     rclpy.init()
     node = rclpy.create_node('interactive_demo')
 
     # Publish SDF content on robot_description topic
-    # latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
-    # description_publisher = node.create_publisher(StringMsg, 'robot_description', qos_profile=latching_qos)
-    # msg = StringMsg()
-    # with open(sdf_file_path, 'r') as sdf_file:
-    #     msg.data = sdf_file.read()
-    # description_publisher.publish(msg)
+    latching_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+    description_publisher = node.create_publisher(StringMsg, 'robot_description', qos_profile=latching_qos)
+    msg = StringMsg()
+    with open(sdf_file_path, 'r') as sdf_file:
+        msg.data = sdf_file.read()
+    description_publisher.publish(msg)
 
-    # clock_system = SystemClock()
+    clock_system = SystemClock()
 
-    # builder.AddSystem(clock_system)
+    builder.AddSystem(clock_system)
 
     # Transform broadcaster for TF frames
-    # tf_broadcaster = TransformBroadcaster(node)
+    tf_broadcaster = TransformBroadcaster(node)
 
     # Connect to system that publishes TF transforms
-    # tf_system = TFPublisher(tf_broadcaster=tf_broadcaster, joints=joints)
-    # builder.AddSystem(tf_system)
-    # builder.Connect(
-    #     station.get_multibody_plant().GetOutputPort('body_poses'),
-    #     tf_system.GetInputPort('body_poses')
-    # )
-    # builder.Connect(
-    #     clock_system.GetOutputPort('clock'),
-    #     tf_system.GetInputPort('clock')
-    # )
-
+    tf_system = builder.AddSystem(TFPublisher(tf_broadcaster=tf_broadcaster, joints=joints))
     tf_buffer = Buffer(node=node)
     tf_listener = TransformListener(tf_buffer, node)
     server = InteractiveMarkerServer(node, 'tool_tip_target')
     target_system = builder.AddSystem(MoveablePoint(server, tf_buffer))
 
+    fk_system = builder.AddSystem(ForwardKinematics(station.get_controller_plant()))
+
+    print('built fk system')
+
+    # Blindly assume first joints in plant are the iiwa14
+    just_arm_joints = builder.AddSystem(
+        PadVector(len(joints), station.get_controller_plant().num_joints(), 0.0))
+
+    print('built just_arm_joints', station.get_controller_plant().num_joints(), len(joints))
 
     const_quaternion_wxyz = builder.AddSystem(
         ConstantVectorSource(numpy.array([1.0 , 0.0, 0.0, 0.0]))
     )
 
     make_rigid_transform = builder.AddSystem(MakeRigidTransform())
+
+
+    # TODO(sloretz) how to do I get body poses???
+    # builder.Connect(
+    #     station.get_multibody_plant().GetOutputPort('body_poses'),
+    #     tf_system.GetInputPort('body_poses')
+    # )
+
+    builder.Connect(
+        station.GetOutputPort('iiwa_position_measured'),
+    #    just_arm_joints.get_input_port(0)
+    #)
+
+    #builder.Connect(
+    #    just_arm_joints.get_output_port(0),
+        fk_system.GetInputPort('joint_positions')
+    )
+
+    builder.Connect(
+        fk_system.GetOutputPort('transforms'),
+        tf_system.GetInputPort('body_poses')
+    )
+    # TODO how about system that gets joint states (from iiwa_position_measured),
+    # then using context info for the station they use station.plant.CalcRelativeTransform()
+    # to get poses between joint frames.
+    # One, how do I get the frame names?
+    #   From joints -> joint.frame_on_parent() and joint.frame_on_body
+    # Two, how do I get the station's plant's context?
+    #   
+    # builder.Connect(
+    #     station.GetOutputPort('iiwa_position_measured'),
+    #     tf_system.GetInputPort('body_poses')
+    # )
+    builder.Connect(
+        clock_system.GetOutputPort('clock'),
+        tf_system.GetInputPort('clock')
+    )
 
     builder.Connect(
         target_system.GetOutputPort('point'),
@@ -450,6 +633,9 @@ if __name__ == '__main__':
     simulator_context = simulator.get_mutable_context()
     simulator.set_target_realtime_rate(1.0)
 
+    # print(diagram.GetGraphvizString())
+    # input()
+
     # plant_context = diagram.GetSubsystemContext(plant, simulator_context)
     # integrator_context = diagram.GetSubsystemContext(integrator_sys, simulator_context)
     # integrator.SetPositions(integrator_context, plant.GetPositions(plant_context, model))
@@ -466,6 +652,9 @@ if __name__ == '__main__':
     # integrator_sys.SetPositions(integrator_context, q0)
     diff_ik_context = diff_ik_sys.GetMyMutableContextFromRoot(simulator_context)
     diff_ik_sys.SetPositions(diff_ik_context, q0)
+
+    # import code
+    # code.interact(local=locals())
 
     while simulator_context.get_time() < 12345:
         simulator.AdvanceTo(simulator_context.get_time() + 0.1)
