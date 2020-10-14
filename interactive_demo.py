@@ -3,6 +3,7 @@
 import math
 import os
 
+from drake_ros.systems import MoveableJoints
 from drake_ros.systems import MoveablePoint
 from drake_ros.systems import SystemClock
 from drake_ros.systems import TFPublisher
@@ -434,14 +435,14 @@ if __name__ == '__main__':
     station.SetupClutterClearingStation()
     station.Finalize()
 
-    robot = station.get_controller_plant()
-    diff_ik_parameters = DifferentialInverseKinematicsParameters(
-        robot.num_positions(), robot.num_velocities())
+    # robot = station.get_controller_plant()
+    # diff_ik_parameters = DifferentialInverseKinematicsParameters(
+    #     robot.num_positions(), robot.num_velocities())
 
-    time_step = 0.005
-    diff_ik_parameters.set_timestep(time_step)
-    iiwa14_velocity_limits = numpy.array([1.4, 1.4, 1.7, 1.3, 2.2, 2.3, 2.3])
-    diff_ik_parameters.set_joint_velocity_limits((-iiwa14_velocity_limits, iiwa14_velocity_limits))
+    # time_step = 0.005
+    # diff_ik_parameters.set_timestep(time_step)
+    # iiwa14_velocity_limits = numpy.array([1.4, 1.4, 1.7, 1.3, 2.2, 2.3, 2.3])
+    # diff_ik_parameters.set_joint_velocity_limits((-iiwa14_velocity_limits, iiwa14_velocity_limits))
 
     # integrator_sys = builder.AddSystem(DifferentialInverseKinematicsIntegrator(
     #     robot=robot,
@@ -450,16 +451,16 @@ if __name__ == '__main__':
     #     parameters=diff_ik_parameters,
     #     robot_context=robot.CreateDefaultContext()))
 
-    diff_ik_sys = builder.AddSystem(DifferentialIK(
-        robot=robot,
-        frame_E= robot.GetFrameByName("iiwa_link_7"),
-        parameters=diff_ik_parameters,
-        time_step=time_step))
+    # diff_ik_sys = builder.AddSystem(DifferentialIK(
+    #     robot=robot,
+    #     frame_E= robot.GetFrameByName("iiwa_link_7"),
+    #     parameters=diff_ik_parameters,
+    #     time_step=time_step))
 
-    selector_sys = builder.AddSystem(VectorSelector(BasicVector_[float](len(iiwa14_velocity_limits))))
+    # selector_sys = builder.AddSystem(VectorSelector(BasicVector_[float](len(iiwa14_velocity_limits))))
 
-    home_joints_sys = builder.AddSystem(
-        ConstantVectorSource(numpy.array([0.0] * len(iiwa14_velocity_limits))))
+    # home_joints_sys = builder.AddSystem(
+    #     ConstantVectorSource(numpy.array([0.0] * len(iiwa14_velocity_limits))))
 
     # TODO(sloretz) system that chooses between based on diff ik failure
     # ik_or_home_sys = builder.AddSystem(IsIKWorking(len(iiwa14_velocity_limits)))
@@ -506,8 +507,9 @@ if __name__ == '__main__':
     tf_system = builder.AddSystem(TFPublisher(tf_broadcaster=tf_broadcaster, joints=joints))
     tf_buffer = Buffer(node=node)
     tf_listener = TransformListener(tf_buffer, node)
-    server = InteractiveMarkerServer(node, 'tool_tip_target')
-    target_system = builder.AddSystem(MoveablePoint(server, tf_buffer))
+    server = InteractiveMarkerServer(node, 'joint_targets')
+    # target_system = builder.AddSystem(MoveablePoint(server, tf_buffer))
+    joint_target_system = builder.AddSystem(MoveableJoints(server, tf_buffer, joints))
 
     fk_system = builder.AddSystem(ForwardKinematics(station.get_controller_plant()))
 
@@ -519,11 +521,11 @@ if __name__ == '__main__':
 
     print('built just_arm_joints', station.get_controller_plant().num_joints(), len(joints))
 
-    const_quaternion_wxyz = builder.AddSystem(
-        ConstantVectorSource(numpy.array([1.0 , 0.0, 0.0, 0.0]))
-    )
+    # const_quaternion_wxyz = builder.AddSystem(
+    #     ConstantVectorSource(numpy.array([1.0 , 0.0, 0.0, 0.0]))
+    # )
 
-    make_rigid_transform = builder.AddSystem(MakeRigidTransform())
+    # make_rigid_transform = builder.AddSystem(MakeRigidTransform())
 
 
     # TODO(sloretz) how to do I get body poses???
@@ -562,37 +564,41 @@ if __name__ == '__main__':
         tf_system.GetInputPort('clock')
     )
 
+    # builder.Connect(
+    #     target_system.GetOutputPort('point'),
+    #     make_rigid_transform.GetInputPort('position')
+    # )
     builder.Connect(
-        target_system.GetOutputPort('point'),
-        make_rigid_transform.GetInputPort('position')
+        joint_target_system.GetOutputPort('joint_states'),
+        station.GetInputPort('iiwa_position')
     )
 
-    builder.Connect(
-        const_quaternion_wxyz.get_output_port(0),
-        make_rigid_transform.GetInputPort('orientation')
-    )
+    # builder.Connect(
+    #     const_quaternion_wxyz.get_output_port(0),
+    #     make_rigid_transform.GetInputPort('orientation')
+    # )
     #builder.Connect(
     #    make_rigid_transform.GetOutputPort('transform'),
     #    integrator_sys.GetInputPort('X_WE_desired')
     #)
-    builder.Connect(
-        make_rigid_transform.GetOutputPort('transform'),
-        diff_ik_sys.GetInputPort('target_pose')
-    )
+    # builder.Connect(
+    #     make_rigid_transform.GetOutputPort('transform'),
+    #     diff_ik_sys.GetInputPort('target_pose')
+    # )
 
     #builder.Connect(
     #    integrator_sys.GetOutputPort('joint_positions'),
     #    selector_sys.GetInputPort('true')
     #)
-    builder.Connect(
-        diff_ik_sys.GetOutputPort('joint_position_desired'),
-        selector_sys.GetInputPort('true')
-    )
+    # builder.Connect(
+    #     diff_ik_sys.GetOutputPort('joint_position_desired'),
+    #     selector_sys.GetInputPort('true')
+    # )
 
-    builder.Connect(
-        home_joints_sys.get_output_port(0),
-        selector_sys.GetInputPort('false')
-    )
+    # builder.Connect(
+    #     home_joints_sys.get_output_port(0),
+    #     selector_sys.GetInputPort('false')
+    # )
 
     # builder.Connect(
     #     integrator_sys.GetOutputPort('joint_positions'),
@@ -603,15 +609,15 @@ if __name__ == '__main__':
     #     ik_or_home_sys.get_output_port(0),
     #     selector_sys.GetInputPort('select')
     # )
-    builder.Connect(
-        diff_ik_sys.GetOutputPort('ik_working'),
-        selector_sys.GetInputPort('select')
-    )
+    # builder.Connect(
+    #     diff_ik_sys.GetOutputPort('ik_working'),
+    #     selector_sys.GetInputPort('select')
+    # )
 
-    builder.Connect(
-        selector_sys.GetOutputPort('output'),
-        station.GetInputPort('iiwa_position')
-    )
+    # builder.Connect(
+    #     selector_sys.GetOutputPort('output'),
+    #     station.GetInputPort('iiwa_position')
+    # )
 
     # TODO(sloretz) why can't Drake Visualizer be connected to ManipulationStation's scene graph?
     # ConnectDrakeVisualizer(builder, station.get_scene_graph())
@@ -645,13 +651,13 @@ if __name__ == '__main__':
     station.GetInputPort("iiwa_feedforward_torque").FixValue(
         station_context, numpy.zeros(num_iiwa_joints))
 
-    q0 = station.GetOutputPort("iiwa_position_measured").Eval(
-        station_context)
+    # q0 = station.GetOutputPort("iiwa_position_measured").Eval(
+    #     station_context)
     # integrator_sys.get_mutable_parameters().set_nominal_joint_position(q0)
     # integrator_context = integrator_sys.GetMyMutableContextFromRoot(simulator_context)
     # integrator_sys.SetPositions(integrator_context, q0)
-    diff_ik_context = diff_ik_sys.GetMyMutableContextFromRoot(simulator_context)
-    diff_ik_sys.SetPositions(diff_ik_context, q0)
+    # diff_ik_context = diff_ik_sys.GetMyMutableContextFromRoot(simulator_context)
+    # diff_ik_sys.SetPositions(diff_ik_context, q0)
 
     # import code
     # code.interact(local=locals())
