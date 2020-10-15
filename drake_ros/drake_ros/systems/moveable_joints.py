@@ -51,7 +51,7 @@ class MoveableJoints(LeafSystem):
             else:
                 # TODO(sloretz) support more than revolute joints
                 raise TypeError('joints must be an iterable of RevoluteJoint_[T]')
-            break  # xxx
+            # break  # xxx
 
         server.applyChanges()
 
@@ -70,7 +70,7 @@ class MoveableJoints(LeafSystem):
             # Unexpected control name
             return
 
-        expected_frame = joint.child_body().body_frame().name()
+        expected_frame = joint.parent_body().body_frame().name()
 
         if expected_frame != feedback.header.frame_id:
             print(expected_frame, point_stamped.header.frame_id)
@@ -89,20 +89,28 @@ class MoveableJoints(LeafSystem):
 
     def _make_revolute_marker(self, revolute_joint: RevoluteJoint_):
         int_marker = InteractiveMarker()
-        int_marker.header.frame_id = revolute_joint.child_body().body_frame().name()
+        int_marker.header.frame_id = revolute_joint.parent_body().body_frame().name()
         int_marker.name = revolute_joint.name()
         int_marker.scale = 0.3
         # print(f'marker name {int_marker.name}')
 
+        # Drake revolute axis is same value in both frame on parent and frame on child
+        axis_hat = revolute_joint.revolute_axis()
+        joint_to_parent_in_joint = revolute_joint.frame_on_parent().GetFixedPoseInBodyFrame().inverse()
+        axis_in_parent = joint_to_parent_in_joint.multiply(axis_hat)
+        axis_in_parent_hat = axis_in_parent / numpy.linalg.norm(axis_in_parent)
+        # print(joint_to_parent_in_joint)
+        # print(axis_in_joint, axis_in_parent)
+
+        # What rotation would get the parent X axis to align with the joint axis?
+
+        # what rotation would have gotten the x axis there?
         # https://math.stackexchange.com/q/476311
-        # RViz ROTATE_AXIS marker rotates around X axis in child frame by default
-        # Find rotation matrix transforming X asis to Joint axis
+        # Find rotation matrix transforming X axis to Joint axis
         # Then convert that rotation matrix to quaternion for the interactive marker
         x_axis = (1, 0, 0)
-        joint_axis = revolute_joint.revolute_axis()
-        joint_axis_hat = joint_axis / numpy.linalg.norm(joint_axis)
-        v = numpy.cross(x_axis, joint_axis_hat)
-        c = numpy.dot(x_axis, joint_axis_hat)
+        v = numpy.cross(x_axis, axis_in_parent_hat)
+        c = numpy.dot(x_axis, axis_in_parent_hat)
         v_sub_x = numpy.array((
             (0, -v[2], v[1]),
             (v[2], 0, -v[0]),
@@ -112,18 +120,36 @@ class MoveableJoints(LeafSystem):
             (0, 1, 0),
             (0, 0, 1)))
         i_plus_v_sub_x = numpy.add(identity, v_sub_x)
-        v_sub_x_squared = numpy.multiply(v_sub_x, v_sub_x)
+        v_sub_x_squared = numpy.dot(v_sub_x, v_sub_x)
         rotation_matrix = numpy.add(i_plus_v_sub_x, v_sub_x_squared * (1.0 / (1.0 + c)))
         pydrake_quat = RotationMatrix(rotation_matrix).ToQuaternion()
-        print(pydrake_quat)
+        print("axis_hat", axis_hat, numpy.linalg.norm(axis_hat))
+        print("axis_in_parent", axis_in_parent, numpy.linalg.norm(axis_in_parent))
+        print("axis_in_parent_hat", axis_in_parent_hat, numpy.linalg.norm(axis_in_parent_hat))
+        print("pydrake_quat", pydrake_quat)
 
-        # axis/angle with angle = 0 to quaternion
-        # ax, ay, az = revolute_joint.revolute_axis()
-        # print(ax, ay, az)
-        # int_marker.pose.orientation.w = math.cos(0)
-        # int_marker.pose.orientation.x = ax * math.sin(0)
-        # int_marker.pose.orientation.y = ay * math.sin(0)
-        # int_marker.pose.orientation.z = az * math.sin(0)
+        joint_in_parent = revolute_joint.frame_on_parent().GetFixedPoseInBodyFrame()
+        x, y, z = joint_in_parent.translation()
+        # quat = joint_in_parent.rotation().ToQuaternion()
+        # print(quat)
+        # joint_in_child = revolute_joint.frame_on_child().GetFixedPoseInBodyFrame()
+        # print(joint_in_child.rotation().ToQuaternion())
+
+        int_marker.pose.position.x = x
+        int_marker.pose.position.y = y
+        int_marker.pose.position.z = z
+
+        #quat = quat.multiply(pydrake_quat)
+
+        #int_marker.pose.orientation.w = quat.w()
+        #int_marker.pose.orientation.x = quat.x()
+        #int_marker.pose.orientation.y = quat.y()
+        #int_marker.pose.orientation.z = quat.z()
+
+        # int_marker.pose.orientation.w = 1.
+        # int_marker.pose.orientation.x = 0.
+        # int_marker.pose.orientation.y = 0.
+        # int_marker.pose.orientation.z = 0.
         int_marker.pose.orientation.w = pydrake_quat.w()
         int_marker.pose.orientation.x = pydrake_quat.x()
         int_marker.pose.orientation.y = pydrake_quat.y()
