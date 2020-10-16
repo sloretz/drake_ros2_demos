@@ -94,13 +94,12 @@ class MoveableJoints(LeafSystem):
         int_marker.scale = 0.3
         # print(f'marker name {int_marker.name}')
 
-        # Drake revolute axis is same value in both frame on parent and frame on child
+        # Drake revolute axis is in frame F on parent
         axis_hat = revolute_joint.revolute_axis()
-        joint_to_parent_in_joint = revolute_joint.frame_on_parent().GetFixedPoseInBodyFrame().inverse()
-        axis_in_parent = joint_to_parent_in_joint.multiply(axis_hat)
+        F_to_parent_in_F = revolute_joint.frame_on_parent().GetFixedPoseInBodyFrame().inverse()
+        # Get parallel vector in parent frame
+        axis_in_parent = F_to_parent_in_F.rotation().multiply(axis_hat)
         axis_in_parent_hat = axis_in_parent / numpy.linalg.norm(axis_in_parent)
-        # print(joint_to_parent_in_joint)
-        # print(axis_in_joint, axis_in_parent)
 
         # What rotation would get the parent X axis to align with the joint axis?
 
@@ -114,15 +113,11 @@ class MoveableJoints(LeafSystem):
         v_sub_x = numpy.array((
             (0, -v[2], v[1]),
             (v[2], 0, -v[0]),
-            (-v[1], v[0], 0)))
-        identity = numpy.array((
-            (1, 0, 0),
-            (0, 1, 0),
-            (0, 0, 1)))
-        i_plus_v_sub_x = numpy.add(identity, v_sub_x)
+            (-v[1], v[0], 0)), dtype=numpy.float64)
         v_sub_x_squared = numpy.dot(v_sub_x, v_sub_x)
-        rotation_matrix = numpy.add(i_plus_v_sub_x, v_sub_x_squared * (1.0 / (1.0 + c)))
+        rotation_matrix = numpy.eye(3) + v_sub_x + v_sub_x_squared * (1.0 / (1.0 + c))
         pydrake_quat = RotationMatrix(rotation_matrix).ToQuaternion()
+        print("rotation_matrix", rotation_matrix)
         print("axis_hat", axis_hat, numpy.linalg.norm(axis_hat))
         print("axis_in_parent", axis_in_parent, numpy.linalg.norm(axis_in_parent))
         print("axis_in_parent_hat", axis_in_parent_hat, numpy.linalg.norm(axis_in_parent_hat))
