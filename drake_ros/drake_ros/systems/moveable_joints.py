@@ -48,7 +48,6 @@ class MoveableJoints(LeafSystem):
         self._joint_axis_in_child = {}
 
         for joint in self._joints:
-            print('Making stuff for', joint.name())
             if RevoluteJoint_.is_subclass_of_instantiation(type(joint)):
                 server.insert(
                     self._make_revolute_marker(joint),
@@ -68,15 +67,9 @@ class MoveableJoints(LeafSystem):
         if feedback.event_type != InteractiveMarkerFeedback.POSE_UPDATE:
             return
 
-        if feedback.control_name != f'rotate_axis_{joint.name()}':
-            print(f'Unexpected control name {feedback.control_name} with joint {joint.name()}')
-            # Unexpected control name
-            return
-
         expected_frame = joint.child_body().body_frame().name()
 
         if expected_frame != feedback.header.frame_id:
-            print(expected_frame, point_stamped.header.frame_id)
             # TODO(sloretz) fix tf2_geometry_msgs_py :(
             # transformed_point = self._tf_buffer.transform(point_stamped, self._frame_id)
             print("TODO accept feedback in different frame")
