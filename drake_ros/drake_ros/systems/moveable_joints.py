@@ -56,7 +56,6 @@ class MoveableJoints(LeafSystem):
             else:
                 # TODO(sloretz) support more than revolute joints
                 raise TypeError('joints must be an iterable of RevoluteJoint_[T]')
-            # break  # xxx
 
         server.applyChanges()
 
@@ -87,36 +86,27 @@ class MoveableJoints(LeafSystem):
         qx = feedback.pose.orientation.x
         qy = feedback.pose.orientation.y
         qz = feedback.pose.orientation.z
+
         new_orientation = Quaternion(qw, qx, qy, qz)
         prev_orientation = self._joint_prev_orientation[joint.name()]
         orientation_diff = prev_orientation.inverse().multiply(new_orientation)
         diff_aa = AngleAxis(orientation_diff)
 
-        # angle = 2.0 * math.atan2(math.sqrt(qx * qx + qy * qy + qz * qz), qw)
-        angle_inc = diff_aa.angle()
-
         joint_axis = self._joint_axis_in_child[joint.name()]
         dot = numpy.dot(joint_axis, diff_aa.axis())
-        print(joint_axis, diff_aa.axis())
         if dot > 0.999:
             angle_inc = diff_aa.angle()
         elif dot < -0.999:
             angle_inc = -1 * diff_aa.angle()
         else:
-            angle_inc = 0
+            angle_inc = 0.
 
-        # print('angle inc', angle)
-        prev_angle = self._joint_states[self._joint_indexes[joint.name()]]
-        angle = prev_angle + angle_inc
+        angle = self._joint_states[self._joint_indexes[joint.name()]] + angle_inc
 
         if angle > joint.position_upper_limit():
             angle = joint.position_upper_limit()
-            print('UPPER LIMIT', angle)
         elif angle < joint.position_lower_limit():
             angle = joint.position_lower_limit()
-            print('LOWER LIMIT', angle)
-
-        print('angle_inc', angle_inc, 'prev', prev_angle, 'angle', angle, 'dot', dot)
 
         self._joint_states[self._joint_indexes[joint.name()]] = angle
         self._joint_prev_orientation[joint.name()] = new_orientation
@@ -126,27 +116,24 @@ class MoveableJoints(LeafSystem):
 
     def _make_revolute_marker(self, revolute_joint: RevoluteJoint_):
         int_marker = InteractiveMarker()
-        # int_marker.header.frame_id = revolute_joint.parent_body().body_frame().name()
         int_marker.header.frame_id = revolute_joint.child_body().body_frame().name()
         int_marker.name = revolute_joint.name()
         int_marker.scale = 0.3
-        # print(f'marker name {int_marker.name}')
+
+        int_marker.pose.position.x = 0.
+        int_marker.pose.position.y = 0.
+        int_marker.pose.position.z = 0.
+        int_marker.pose.orientation.w = 1.
+        int_marker.pose.orientation.x = 0.
+        int_marker.pose.orientation.y = 0.
+        int_marker.pose.orientation.z = 0.
 
         # Drake revolute axis is in frame F on parent
         axis_hat = revolute_joint.revolute_axis()
-        # F_to_parent_in_F = revolute_joint.frame_on_parent().GetFixedPoseInBodyFrame().inverse()
-        # # Get parallel vector in parent frame
-        # axis_in_parent = F_to_parent_in_F.rotation().multiply(axis_hat)
-        # axis_in_parent_hat = axis_in_parent / numpy.linalg.norm(axis_in_parent)
-        # # Store this info to help when calculating angle in feedback
         self._joint_axis_in_child[revolute_joint.name()] = axis_hat
 
         # What rotation would get the parent X axis to align with the joint axis?
-
-        # what rotation would have gotten the x axis there?
         # https://math.stackexchange.com/q/476311
-        # Find rotation matrix transforming X axis to Joint axis
-        # Then convert that rotation matrix to quaternion for the interactive marker
         x_axis = (1, 0, 0)
         v = numpy.cross(x_axis, axis_hat)
         c = numpy.dot(x_axis, axis_hat)
@@ -157,37 +144,6 @@ class MoveableJoints(LeafSystem):
         v_sub_x_squared = numpy.dot(v_sub_x, v_sub_x)
         rotation_matrix = numpy.eye(3) + v_sub_x + v_sub_x_squared * (1.0 / (1.0 + c))
         pydrake_quat = RotationMatrix(rotation_matrix).ToQuaternion()
-        # print("rotation_matrix", rotation_matrix)
-        # print("axis_hat", axis_hat, numpy.linalg.norm(axis_hat))
-        # print("axis_in_parent", axis_in_parent, numpy.linalg.norm(axis_in_parent))
-        # print("axis_in_parent_hat", axis_in_parent_hat, numpy.linalg.norm(axis_in_parent_hat))
-        # print("pydrake_quat", pydrake_quat)
-
-        # joint_in_parent = revolute_joint.frame_on_parent().GetFixedPoseInBodyFrame()
-        # x, y, z = joint_in_parent.translation()
-        x, y, z = (0., 0., 0.)
-        # quat = joint_in_parent.rotation().ToQuaternion()
-        # print(quat)
-        # joint_in_child = revolute_joint.frame_on_child().GetFixedPoseInBodyFrame()
-        # print(joint_in_child.rotation().ToQuaternion())
-
-        int_marker.pose.position.x = x
-        int_marker.pose.position.y = y
-        int_marker.pose.position.z = z
-
-        #quat = quat.multiply(pydrake_quat)
-
-        #int_marker.pose.orientation.w = quat.w()
-        #int_marker.pose.orientation.x = quat.x()
-        #int_marker.pose.orientation.y = quat.y()
-        #int_marker.pose.orientation.z = quat.z()
-
-        int_marker.pose.orientation.w = 1.
-        int_marker.pose.orientation.x = 0.
-        int_marker.pose.orientation.y = 0.
-        int_marker.pose.orientation.z = 0.
-
-        self._joint_prev_orientation[revolute_joint.name()] = pydrake_quat
 
         joint_control = InteractiveMarkerControl()
         joint_control.orientation.w = pydrake_quat.w()
@@ -199,6 +155,5 @@ class MoveableJoints(LeafSystem):
         joint_control.name = f'rotate_axis_{revolute_joint.name()}'
         joint_control.interaction_mode = InteractiveMarkerControl.ROTATE_AXIS
 
-        # TODO (sloretz) Orientation needs to match joint axis
         int_marker.controls.append(joint_control)
         return int_marker
