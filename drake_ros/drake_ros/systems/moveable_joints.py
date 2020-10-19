@@ -4,6 +4,8 @@ import math
 import geometry_msgs.msg
 import numpy
 
+from pydrake.common.eigen_geometry import AngleAxis
+from pydrake.common.eigen_geometry import Quaternion
 from pydrake.common.value import AbstractValue
 from pydrake.math import RotationMatrix
 from pydrake.multibody.tree import Joint_
@@ -41,6 +43,9 @@ class MoveableJoints(LeafSystem):
         self._joint_states = [0.0] * len(self._joints)
         # Map joint names to indexes in joint_states
         self._joint_indexes = {j.name(): i for j, i in zip(self._joints, range(len(self._joints)))}
+        self._joint_prev_orientation = {j.name(): Quaternion() for j in self._joints}
+
+        self._joint_axis_in_parent = {}
 
         for joint in self._joints:
             print('Making stuff for', joint.name())
@@ -61,8 +66,7 @@ class MoveableJoints(LeafSystem):
             self._do_get_joint_states)
 
     def _revolute_feedback(self, joint, feedback):
-        if feedback.event_type != InteractiveMarkerFeedback.MOUSE_UP:
-            # Only care about pose updates happening after MOUSE_UP
+        if feedback.event_type != InteractiveMarkerFeedback.POSE_UPDATE:
             return
 
         if feedback.control_name != f'rotate_axis_{joint.name()}':
@@ -79,10 +83,43 @@ class MoveableJoints(LeafSystem):
             print("TODO accept feedback in different frame")
             return
 
-        # print(feedback.pose.orientation)
-        # print(dir(joint), joint.revolute_axis())
-        angle = 2.0 * math.acos(feedback.pose.orientation.w)
+        qw = feedback.pose.orientation.w
+        qx = feedback.pose.orientation.x
+        qy = feedback.pose.orientation.y
+        qz = feedback.pose.orientation.z
+        new_orientation = Quaternion(qw, qx, qy, qz)
+        prev_orientation = self._joint_prev_orientation[joint.name()]
+        orientation_diff = prev_orientation.inverse().multiply(new_orientation)
+        diff_aa = AngleAxis(orientation_diff)
+
+        # angle = 2.0 * math.atan2(math.sqrt(qx * qx + qy * qy + qz * qz), qw)
+        angle_inc = diff_aa.angle()
+
+        joint_axis = self._joint_axis_in_parent[joint.name()]
+        dot = numpy.dot(joint_axis, diff_aa.axis())
+        print(joint_axis, diff_aa.axis())
+        if dot > 0.999:
+            angle_inc = diff_aa.angle()
+        elif dot < -0.999:
+            angle_inc = -1 * diff_aa.angle()
+        else:
+            angle_inc = 0
+
+        # print('angle inc', angle)
+        prev_angle = self._joint_states[self._joint_indexes[joint.name()]]
+        angle = prev_angle + angle_inc
+
+        if angle > joint.position_upper_limit():
+            angle = joint.position_upper_limit()
+            print('UPPER LIMIT', angle)
+        elif angle < joint.position_lower_limit():
+            angle = joint.position_lower_limit()
+            print('LOWER LIMIT', angle)
+
+        print('angle_inc', angle_inc, 'prev', prev_angle, 'angle', angle, 'dot', dot)
+
         self._joint_states[self._joint_indexes[joint.name()]] = angle
+        self._joint_prev_orientation[joint.name()] = new_orientation
 
     def _do_get_joint_states(self, context, data):
         data.SetFromVector(self._joint_states)
@@ -100,6 +137,8 @@ class MoveableJoints(LeafSystem):
         # Get parallel vector in parent frame
         axis_in_parent = F_to_parent_in_F.rotation().multiply(axis_hat)
         axis_in_parent_hat = axis_in_parent / numpy.linalg.norm(axis_in_parent)
+        # Store this info to help when calculating angle in feedback
+        self._joint_axis_in_parent[revolute_joint.name()] = axis_in_parent_hat
 
         # What rotation would get the parent X axis to align with the joint axis?
 
@@ -141,16 +180,19 @@ class MoveableJoints(LeafSystem):
         #int_marker.pose.orientation.y = quat.y()
         #int_marker.pose.orientation.z = quat.z()
 
-        # int_marker.pose.orientation.w = 1.
-        # int_marker.pose.orientation.x = 0.
-        # int_marker.pose.orientation.y = 0.
-        # int_marker.pose.orientation.z = 0.
-        int_marker.pose.orientation.w = pydrake_quat.w()
-        int_marker.pose.orientation.x = pydrake_quat.x()
-        int_marker.pose.orientation.y = pydrake_quat.y()
-        int_marker.pose.orientation.z = pydrake_quat.z()
+        int_marker.pose.orientation.w = 1.
+        int_marker.pose.orientation.x = 0.
+        int_marker.pose.orientation.y = 0.
+        int_marker.pose.orientation.z = 0.
+
+        self._joint_prev_orientation[revolute_joint.name()] = pydrake_quat
 
         joint_control = InteractiveMarkerControl()
+        joint_control.orientation.w = pydrake_quat.w()
+        joint_control.orientation.x = pydrake_quat.x()
+        joint_control.orientation.y = pydrake_quat.y()
+        joint_control.orientation.z = pydrake_quat.z()
+
         joint_control.always_visible = True
         joint_control.name = f'rotate_axis_{revolute_joint.name()}'
         joint_control.interaction_mode = InteractiveMarkerControl.ROTATE_AXIS
