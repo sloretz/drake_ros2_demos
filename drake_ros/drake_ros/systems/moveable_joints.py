@@ -45,7 +45,7 @@ class MoveableJoints(LeafSystem):
         self._joint_indexes = {j.name(): i for j, i in zip(self._joints, range(len(self._joints)))}
         self._joint_prev_orientation = {j.name(): Quaternion() for j in self._joints}
 
-        self._joint_axis_in_parent = {}
+        self._joint_axis_in_child = {}
 
         for joint in self._joints:
             print('Making stuff for', joint.name())
@@ -74,7 +74,7 @@ class MoveableJoints(LeafSystem):
             # Unexpected control name
             return
 
-        expected_frame = joint.parent_body().body_frame().name()
+        expected_frame = joint.child_body().body_frame().name()
 
         if expected_frame != feedback.header.frame_id:
             print(expected_frame, point_stamped.header.frame_id)
@@ -95,7 +95,7 @@ class MoveableJoints(LeafSystem):
         # angle = 2.0 * math.atan2(math.sqrt(qx * qx + qy * qy + qz * qz), qw)
         angle_inc = diff_aa.angle()
 
-        joint_axis = self._joint_axis_in_parent[joint.name()]
+        joint_axis = self._joint_axis_in_child[joint.name()]
         dot = numpy.dot(joint_axis, diff_aa.axis())
         print(joint_axis, diff_aa.axis())
         if dot > 0.999:
@@ -126,19 +126,20 @@ class MoveableJoints(LeafSystem):
 
     def _make_revolute_marker(self, revolute_joint: RevoluteJoint_):
         int_marker = InteractiveMarker()
-        int_marker.header.frame_id = revolute_joint.parent_body().body_frame().name()
+        # int_marker.header.frame_id = revolute_joint.parent_body().body_frame().name()
+        int_marker.header.frame_id = revolute_joint.child_body().body_frame().name()
         int_marker.name = revolute_joint.name()
         int_marker.scale = 0.3
         # print(f'marker name {int_marker.name}')
 
         # Drake revolute axis is in frame F on parent
         axis_hat = revolute_joint.revolute_axis()
-        F_to_parent_in_F = revolute_joint.frame_on_parent().GetFixedPoseInBodyFrame().inverse()
-        # Get parallel vector in parent frame
-        axis_in_parent = F_to_parent_in_F.rotation().multiply(axis_hat)
-        axis_in_parent_hat = axis_in_parent / numpy.linalg.norm(axis_in_parent)
-        # Store this info to help when calculating angle in feedback
-        self._joint_axis_in_parent[revolute_joint.name()] = axis_in_parent_hat
+        # F_to_parent_in_F = revolute_joint.frame_on_parent().GetFixedPoseInBodyFrame().inverse()
+        # # Get parallel vector in parent frame
+        # axis_in_parent = F_to_parent_in_F.rotation().multiply(axis_hat)
+        # axis_in_parent_hat = axis_in_parent / numpy.linalg.norm(axis_in_parent)
+        # # Store this info to help when calculating angle in feedback
+        self._joint_axis_in_child[revolute_joint.name()] = axis_hat
 
         # What rotation would get the parent X axis to align with the joint axis?
 
@@ -147,8 +148,8 @@ class MoveableJoints(LeafSystem):
         # Find rotation matrix transforming X axis to Joint axis
         # Then convert that rotation matrix to quaternion for the interactive marker
         x_axis = (1, 0, 0)
-        v = numpy.cross(x_axis, axis_in_parent_hat)
-        c = numpy.dot(x_axis, axis_in_parent_hat)
+        v = numpy.cross(x_axis, axis_hat)
+        c = numpy.dot(x_axis, axis_hat)
         v_sub_x = numpy.array((
             (0, -v[2], v[1]),
             (v[2], 0, -v[0]),
@@ -156,14 +157,15 @@ class MoveableJoints(LeafSystem):
         v_sub_x_squared = numpy.dot(v_sub_x, v_sub_x)
         rotation_matrix = numpy.eye(3) + v_sub_x + v_sub_x_squared * (1.0 / (1.0 + c))
         pydrake_quat = RotationMatrix(rotation_matrix).ToQuaternion()
-        print("rotation_matrix", rotation_matrix)
-        print("axis_hat", axis_hat, numpy.linalg.norm(axis_hat))
-        print("axis_in_parent", axis_in_parent, numpy.linalg.norm(axis_in_parent))
-        print("axis_in_parent_hat", axis_in_parent_hat, numpy.linalg.norm(axis_in_parent_hat))
-        print("pydrake_quat", pydrake_quat)
+        # print("rotation_matrix", rotation_matrix)
+        # print("axis_hat", axis_hat, numpy.linalg.norm(axis_hat))
+        # print("axis_in_parent", axis_in_parent, numpy.linalg.norm(axis_in_parent))
+        # print("axis_in_parent_hat", axis_in_parent_hat, numpy.linalg.norm(axis_in_parent_hat))
+        # print("pydrake_quat", pydrake_quat)
 
-        joint_in_parent = revolute_joint.frame_on_parent().GetFixedPoseInBodyFrame()
-        x, y, z = joint_in_parent.translation()
+        # joint_in_parent = revolute_joint.frame_on_parent().GetFixedPoseInBodyFrame()
+        # x, y, z = joint_in_parent.translation()
+        x, y, z = (0., 0., 0.)
         # quat = joint_in_parent.rotation().ToQuaternion()
         # print(quat)
         # joint_in_child = revolute_joint.frame_on_child().GetFixedPoseInBodyFrame()
