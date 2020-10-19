@@ -663,7 +663,7 @@ if __name__ == '__main__':
     # code.interact(local=locals())
 
     while simulator_context.get_time() < 12345:
-        simulator.AdvanceTo(simulator_context.get_time() + 0.1)
+        simulator.AdvanceTo(simulator_context.get_time() + 0.01)
         # TODO(sloretz) really need a spin_some in rclpy
         rclpy.spin_once(node, timeout_sec=0)
 
