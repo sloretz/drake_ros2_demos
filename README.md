@@ -26,7 +26,6 @@ Once the prerequisites are met, install `drake_ros` into the Drake virtualenv.
 cd path/to/this/repo
 cd drake_ros/
 python setup.py develop
-
 ```
 
 ## ROS 2 tf and Robot Model Demo
