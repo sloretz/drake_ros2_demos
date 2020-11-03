@@ -9,12 +9,9 @@ For a similar effort in ROS 1, see [EricCousineau-TRI/repro `drake_ros1_hacks`](
 * Ubuntu Focal (20.04)
 * [ROS 2 Rolling](https://index.ros.org/doc/ros2/Installation/Rolling/)
 * [Some Drake binary installation from October 2020](https://drake.mit.edu/from_binary.html)
-* A colcon workspace with [ros/sdformat\_urdf#1](https://github.com/ros/sdformat_urdf/pull/1)
 
-Install ROS 2 Rolling using the [Linux binary instructions](https://index.ros.org/doc/ros2/Installation/Rolling/Linux-Install-Debians/).
-Install the apt package `ros-rolling-desktop`.
-Create a colcon workspace with [ros/sdformat\_urdf#1](https://github.com/ros/sdformat_urdf/pull/1).
-Use `rosdep` to install `sdformat_urdf`'s dependencies with `rosdep install --rosdistro=rolling -i --from-paths path/to/ws/src`.
+Install ROS 2 Rolling using the [Linux binary instructions](https://index.ros.org/doc/ros2/Installation/Rolling/Linux-Install-Debians/) and [enable the ROS 2 testing apt repo](https://index.ros.org/doc/ros2/Installation/Prerelease-Testing/).
+Install the apt packages `ros-rolling-desktop` and `ros-rolling-sdformat-urdf`.
 Extract the Drake binary installation, install it's prerequisites, and [use this Python virutalenv trick](https://drake.mit.edu/python_bindings.html#inside-virtualenv).
 
 ## Setup
