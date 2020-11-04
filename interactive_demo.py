@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
-import math
 import os
 
 from drake_ros.systems import MoveableJoints
-from drake_ros.systems import MoveablePoint
 from drake_ros.systems import SystemClock
 from drake_ros.systems import TFPublisher
 
@@ -12,29 +10,16 @@ from interactive_markers import InteractiveMarkerServer
 
 import numpy
 
-from pydrake.common.eigen_geometry import Quaternion
 from pydrake.common.value import AbstractValue
 from pydrake.examples.manipulation_station import ManipulationStation
 from pydrake.geometry import ConnectDrakeVisualizer
-from pydrake.manipulation.planner import DifferentialInverseKinematicsParameters
-# from pydrake.manipulation.planner import DifferentialInverseKinematicsIntegrator
-from pydrake.manipulation.planner import DoDifferentialInverseKinematics
 from pydrake.math import RigidTransform
-from pydrake.math import RotationMatrix
-# from pydrake.math import Quaternion
-from pydrake.multibody.parsing import Parser
-from pydrake.multibody.plant import AddMultibodyPlantSceneGraph
 from pydrake.multibody.tree import BodyIndex
-from pydrake.multibody.tree import JointIndex
-from pydrake.multibody.tree import WeldJoint
 from pydrake.systems.analysis import Simulator
 from pydrake.systems.framework import BasicVector_
 from pydrake.systems.framework import DiagramBuilder
 from pydrake.systems.framework import LeafSystem
-from pydrake.systems.meshcat_visualizer import ConnectMeshcatVisualizer
-from pydrake.systems.primitives import ConstantValueSource
 from pydrake.systems.primitives import ConstantVectorSource
-from pydrake.systems.primitives import Demultiplexer
 
 import rclpy
 
@@ -43,9 +28,6 @@ from std_msgs.msg import String as StringMsg
 from tf2_ros import Buffer
 from tf2_ros import TransformListener
 from tf2_ros import TransformBroadcaster
-
-from pydrake.common import RandomDistribution
-from pydrake.systems.primitives import RandomSource
 
 
 class ForwardKinematics(LeafSystem):

@@ -1,6 +1,7 @@
 from pydrake.systems.framework import LeafSystem
 from pydrake.systems.framework import PublishEvent
 from pydrake.systems.framework import TriggerType
+from pydrake.multibody.tree import Joint_
 
 
 class JointStatePublisher(LeafSystem):

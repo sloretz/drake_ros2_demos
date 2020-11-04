@@ -1,12 +1,9 @@
 import functools
-import math
 
-import geometry_msgs.msg
 import numpy
 
 from pydrake.common.eigen_geometry import AngleAxis
 from pydrake.common.eigen_geometry import Quaternion
-from pydrake.common.value import AbstractValue
 from pydrake.math import RotationMatrix
 from pydrake.multibody.tree import Joint_
 from pydrake.multibody.tree import RevoluteJoint_
@@ -16,7 +13,6 @@ from pydrake.systems.framework import BasicVector_
 from visualization_msgs.msg import InteractiveMarker
 from visualization_msgs.msg import InteractiveMarkerControl
 from visualization_msgs.msg import InteractiveMarkerFeedback
-from visualization_msgs.msg import Marker
 
 
 class MoveableJoints(LeafSystem):

@@ -13,7 +13,6 @@ from pydrake.multibody.parsing import Parser
 from pydrake.systems.analysis import Simulator
 from pydrake.multibody.plant import AddMultibodyPlantSceneGraph
 from pydrake.multibody.tree import JointIndex
-from pydrake.multibody.tree import WeldJoint
 from pydrake.systems.framework import DiagramBuilder
 from pydrake.systems.primitives import ConstantVectorSource
 

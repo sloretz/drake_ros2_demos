@@ -4,7 +4,6 @@ import geometry_msgs.msg
 # from tf2_ros import Buffer
 # from tf3_ros import TransformListener
 
-from pydrake.common.value import AbstractValue
 from pydrake.systems.framework import LeafSystem
 from pydrake.systems.framework import BasicVector_
 
