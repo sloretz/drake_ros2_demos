@@ -12,7 +12,7 @@ from visualization_msgs.msg import (InteractiveMarker,
 
 
 
-class MoveablePoint(LeafSystem):
+class MovablePoint(LeafSystem):
 
     def __init__(self, server, tf_buffer, *, frame_id='WorldBody'):
         super().__init__()

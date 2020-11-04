@@ -11,7 +11,7 @@ from visualization_msgs.msg import (InteractiveMarker,
                                     InteractiveMarkerFeedback)
 
 
-class MoveableJoints(LeafSystem):
+class MovableJoints(LeafSystem):
 
     def __init__(self, server, tf_buffer, joints):
         super().__init__()

@@ -5,7 +5,7 @@ import os
 import numpy
 
 import rclpy
-from drake_ros.systems import MoveableJoints, SystemClock, TFPublisher
+from drake_ros.systems import MovableJoints, SystemClock, TFPublisher
 from interactive_markers import InteractiveMarkerServer
 from pydrake.common.value import AbstractValue
 from pydrake.examples.manipulation_station import ManipulationStation
@@ -144,7 +144,7 @@ def main():
     tf_buffer = Buffer(node=node)
     tf_listener = TransformListener(tf_buffer, node)
     server = InteractiveMarkerServer(node, 'joint_targets')
-    joint_target_system = builder.AddSystem(MoveableJoints(server, tf_buffer, joints))
+    joint_target_system = builder.AddSystem(MovableJoints(server, tf_buffer, joints))
 
     fk_system = builder.AddSystem(ForwardKinematics(station.get_controller_plant()))
 
