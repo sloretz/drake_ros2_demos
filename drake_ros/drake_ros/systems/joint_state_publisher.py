@@ -1,7 +1,5 @@
-from pydrake.systems.framework import LeafSystem
-from pydrake.systems.framework import PublishEvent
-from pydrake.systems.framework import TriggerType
 from pydrake.multibody.tree import Joint_
+from pydrake.systems.framework import LeafSystem, PublishEvent, TriggerType
 
 
 class JointStatePublisher(LeafSystem):
@@ -31,4 +29,3 @@ class JointStatePublisher(LeafSystem):
         # TODO(sloretz) How to get plant context for calculating joint angle?
         # joint.get_angle(plant_context)
         pass
-

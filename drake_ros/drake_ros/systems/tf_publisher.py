@@ -1,13 +1,9 @@
+import rclpy.time
 from geometry_msgs.msg import TransformStamped
-
 from pydrake.common.value import AbstractValue
 from pydrake.math import RigidTransform
 from pydrake.multibody.tree import Joint_
-from pydrake.systems.framework import LeafSystem
-from pydrake.systems.framework import PublishEvent
-from pydrake.systems.framework import TriggerType
-
-import rclpy.time
+from pydrake.systems.framework import LeafSystem, PublishEvent, TriggerType
 from tf2_ros import TransformBroadcaster
 
 

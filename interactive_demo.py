@@ -2,32 +2,22 @@
 
 import os
 
-from drake_ros.systems import MoveableJoints
-from drake_ros.systems import SystemClock
-from drake_ros.systems import TFPublisher
-
-from interactive_markers import InteractiveMarkerServer
-
 import numpy
 
+import rclpy
+from drake_ros.systems import MoveableJoints, SystemClock, TFPublisher
+from interactive_markers import InteractiveMarkerServer
 from pydrake.common.value import AbstractValue
 from pydrake.examples.manipulation_station import ManipulationStation
 from pydrake.geometry import ConnectDrakeVisualizer
 from pydrake.math import RigidTransform
 from pydrake.multibody.tree import BodyIndex
 from pydrake.systems.analysis import Simulator
-from pydrake.systems.framework import BasicVector_
-from pydrake.systems.framework import DiagramBuilder
-from pydrake.systems.framework import LeafSystem
+from pydrake.systems.framework import BasicVector_, DiagramBuilder, LeafSystem
 from pydrake.systems.primitives import ConstantVectorSource
-
-import rclpy
-
-from rclpy.qos import QoSProfile, DurabilityPolicy
+from rclpy.qos import DurabilityPolicy, QoSProfile
 from std_msgs.msg import String as StringMsg
-from tf2_ros import Buffer
-from tf2_ros import TransformListener
-from tf2_ros import TransformBroadcaster
+from tf2_ros import Buffer, TransformBroadcaster, TransformListener
 
 
 class ForwardKinematics(LeafSystem):

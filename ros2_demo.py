@@ -4,21 +4,18 @@ import os
 
 import numpy
 
-from drake_ros.systems import SystemClock
-from drake_ros.systems import TFPublisher
-
+import rclpy
+import rclpy.time
+from drake_ros.systems import SystemClock, TFPublisher
 from pydrake.geometry import ConnectDrakeVisualizer
 from pydrake.math import RigidTransform
 from pydrake.multibody.parsing import Parser
-from pydrake.systems.analysis import Simulator
 from pydrake.multibody.plant import AddMultibodyPlantSceneGraph
 from pydrake.multibody.tree import JointIndex
+from pydrake.systems.analysis import Simulator
 from pydrake.systems.framework import DiagramBuilder
 from pydrake.systems.primitives import ConstantVectorSource
-
-import rclpy
-import rclpy.time
-from rclpy.qos import QoSProfile, DurabilityPolicy
+from rclpy.qos import DurabilityPolicy, QoSProfile
 from std_msgs.msg import String as StringMsg
 from tf2_ros import TransformBroadcaster
 

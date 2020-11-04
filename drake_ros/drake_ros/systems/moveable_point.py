@@ -1,16 +1,15 @@
 import geometry_msgs.msg
+from pydrake.systems.framework import BasicVector_, LeafSystem
+from visualization_msgs.msg import (InteractiveMarker,
+                                    InteractiveMarkerControl,
+                                    InteractiveMarkerFeedback, Marker)
+
 # from interactive_markers import InteractiveMarkerServer
 
 # from tf2_ros import Buffer
 # from tf3_ros import TransformListener
 
-from pydrake.systems.framework import LeafSystem
-from pydrake.systems.framework import BasicVector_
 
-from visualization_msgs.msg import InteractiveMarker
-from visualization_msgs.msg import InteractiveMarkerControl
-from visualization_msgs.msg import InteractiveMarkerFeedback
-from visualization_msgs.msg import Marker
 
 
 class MoveablePoint(LeafSystem):
@@ -116,4 +115,3 @@ class MoveablePoint(LeafSystem):
         int_marker.controls.append(z_snitch_control)
 
         return int_marker
-

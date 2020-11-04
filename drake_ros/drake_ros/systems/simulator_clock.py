@@ -1,9 +1,6 @@
-from pydrake.common.value import AbstractValue
-from pydrake.systems.framework import LeafSystem
-from pydrake.systems.framework import PublishEvent
-from pydrake.systems.framework import TriggerType
-
 import rclpy.time
+from pydrake.common.value import AbstractValue
+from pydrake.systems.framework import LeafSystem, PublishEvent, TriggerType
 
 
 class SimulatorClock(LeafSystem):
