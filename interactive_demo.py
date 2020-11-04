@@ -105,7 +105,7 @@ class PadVector(LeafSystem):
         output.SetFromVector(vector)
 
 
-if __name__ == '__main__':
+def main():
     builder = DiagramBuilder()
 
     station = builder.AddSystem(ManipulationStation())
@@ -204,3 +204,7 @@ if __name__ == '__main__':
         rclpy.spin_once(node, timeout_sec=0)
 
     rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
