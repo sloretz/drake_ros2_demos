@@ -3,6 +3,7 @@ import functools
 import numpy
 
 from pydrake.common.eigen_geometry import AngleAxis, Quaternion
+from pydrake.math import ComputeBasisFromAxis
 from pydrake.math import RotationMatrix
 from pydrake.multibody.tree import Joint_, RevoluteJoint_
 from pydrake.systems.framework import BasicVector_, LeafSystem
