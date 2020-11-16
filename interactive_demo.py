@@ -68,34 +68,6 @@ class ForwardKinematics(LeafSystem):
         data.set_value(transforms)
 
 
-class PadVector(LeafSystem):
-    """
-    Add some constant values to pad a vector.
-    """
-
-    def __init__(self, num_inputs, num_outputs, output_value=0.0):
-        super().__init__()
-
-        if num_inputs > num_outputs:
-            raise ValueError('Must have more outputs than inputs')
-
-        self._difference = num_outputs - num_inputs
-        self._output_value = output_value
-
-        self._input_port = self.DeclareVectorInputPort(
-            'input', BasicVector_[float](num_inputs))
-
-        self.DeclareVectorOutputPort(
-            'output', BasicVector_[float](num_outputs), self._pad_output)
-
-    def _pad_output(self, context, output):
-        in_vec = self._input_port.Eval(context)
-        vector = [v for v in in_vec]
-        for i in range(self._difference):
-            vector.append(self._output_value)
-        output.SetFromVector(vector)
-
-
 def main():
     builder = DiagramBuilder()
 
@@ -148,10 +120,6 @@ def main():
     joint_target_system = builder.AddSystem(MovableJoints(server, tf_buffer, joints))
 
     fk_system = builder.AddSystem(ForwardKinematics(station.get_controller_plant()))
-
-    # Blindly assume first joints in plant are the iiwa14
-    just_arm_joints = builder.AddSystem(
-        PadVector(len(joints), station.get_controller_plant().num_joints(), 0.0))
 
     builder.Connect(
         station.GetOutputPort('iiwa_position_measured'),
