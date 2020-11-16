@@ -1,6 +1,5 @@
 from .joint_state_publisher import JointStatePublisher
 from .movable_joints import MovableJoints
-from .movable_point import MovablePoint
 from .simulator_clock import SimulatorClock
 from .system_clock import SystemClock
 from .tf_publisher import TFPublisher
@@ -8,7 +7,6 @@ from .tf_publisher import TFPublisher
 __all__ = (
     'JointStatePublisher',
     'MovableJoints',
-    'MovablePoint',
     'SimulatorClock',
     'SystemClock',
     'TFPublisher'
