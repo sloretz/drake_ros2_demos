@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     parser = Parser(plant)
     parser.package_map().PopulateFromEnvironment('AMENT_PREFIX_PATH')
-    sdf_file_path = parser.package_map().GetPath('ur10_description') + 'ur10.sdf'
+    sdf_file_path = os.path.join(parser.package_map().GetPath('ur10_description'), 'ur10.sdf')
 
     model_name = "ur10"
     model = parser.AddModelFromFile(sdf_file_path, model_name)
