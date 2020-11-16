@@ -11,6 +11,7 @@ from pydrake.common.value import AbstractValue
 from pydrake.examples.manipulation_station import ManipulationStation
 from pydrake.geometry import ConnectDrakeVisualizer
 from pydrake.math import RigidTransform
+from pydrake.multibody.plant import MultibodyPlant
 from pydrake.multibody.tree import BodyIndex
 from pydrake.systems.analysis import Simulator
 from pydrake.systems.framework import BasicVector_, DiagramBuilder, LeafSystem
