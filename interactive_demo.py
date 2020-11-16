@@ -11,6 +11,7 @@ from pydrake.common.value import AbstractValue
 from pydrake.examples.manipulation_station import ManipulationStation
 from pydrake.geometry import ConnectDrakeVisualizer
 from pydrake.math import RigidTransform
+from pydrake.multibody.parsing import PackageMap
 from pydrake.multibody.plant import MultibodyPlant
 from pydrake.multibody.tree import BodyIndex
 from pydrake.systems.analysis import Simulator
@@ -75,12 +76,11 @@ def main():
     station.SetupClutterClearingStation()
     station.Finalize()
 
-    # Create robot description with re-written paths
-    this_dir = os.path.abspath(os.path.dirname(__file__))
-    sdf_file_path = os.path.join(this_dir, 'iiwa14_no_collision.sdf')
-    with open(os.path.join(this_dir, 'iiwa14_no_collision.sdf.in'), 'r') as file_in:
-        with open(sdf_file_path, 'w') as file_out:
-            file_out.write(file_in.read().replace('PWD_GOES_HERE', this_dir))
+    package_map = PackageMap()
+    package_map.PopulateFromEnvironment('AMENT_PREFIX_PATH')
+    sdf_file_path = os.path.join(
+      package_map.GetPath('iiwa14_description'),
+      'iiwa14_no_collision.sdf')
 
     joint_names = [
         'iiwa_joint_1',
