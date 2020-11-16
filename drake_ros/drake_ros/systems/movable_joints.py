@@ -118,16 +118,7 @@ class MovableJoints(LeafSystem):
         self._joint_axis_in_child[revolute_joint.name()] = axis_hat
 
         # What rotation would get the parent X axis to align with the joint axis?
-        # https://math.stackexchange.com/q/476311
-        x_axis = (1, 0, 0)
-        v = numpy.cross(x_axis, axis_hat)
-        c = numpy.dot(x_axis, axis_hat)
-        v_sub_x = numpy.array((
-            (0, -v[2], v[1]),
-            (v[2], 0, -v[0]),
-            (-v[1], v[0], 0)), dtype=numpy.float64)
-        v_sub_x_squared = numpy.dot(v_sub_x, v_sub_x)
-        rotation_matrix = numpy.eye(3) + v_sub_x + v_sub_x_squared * (1.0 / (1.0 + c))
+        rotation_matrix = ComputeBasisFromAxis(0, axis_hat)
         pydrake_quat = RotationMatrix(rotation_matrix).ToQuaternion()
 
         joint_control = InteractiveMarkerControl()
