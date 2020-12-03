@@ -32,17 +32,35 @@ Set up two terminals: one for launching RViz, and another for launching the Drak
 
 ```
 . /opt/ros/rolling/setup.bash
-. path/to/sdformat_urdf/ws/install/setup.bash
 cd path/to/this/repo
-rviz2 -d view.rviz
+AMENT_PREFIX_PATH="$AMENT_PREFIX_PATH:$(pwd)" rviz2 -d view.rviz
 ```
 
 ```
 . /opt/ros/rolling/setup.bash
-. path/to/sdformat_urdf/ws/install/setup.bash
 . path/to/drake/bin/activate
 cd path/to/this/repo
-./ros2_demo.py
+AMENT_PREFIX_PATH="$AMENT_PREFIX_PATH:$(pwd)" ./ros2_demo.py
 ```
 
 ![ur10_rviz_drake](https://user-images.githubusercontent.com/4175662/90415417-e7976980-e065-11ea-9564-96c820f51680.gif)
+
+## Interactive Markers Demo
+
+This demonstrates using interactive markers to control an iiwa14 being simulated by Drake.
+Set up two terminals: one for launching RViz, and another for launching the Drake simulation.
+
+```
+. /opt/ros/rolling/setup.bash
+cd path/to/this/repo
+AMENT_PREFIX_PATH="$AMENT_PREFIX_PATH:$(pwd)" rviz2 -d interactive_demo.rviz
+```
+
+```
+. /opt/ros/rolling/setup.bash
+. path/to/drake/bin/activate
+cd path/to/this/repo
+AMENT_PREFIX_PATH="$AMENT_PREFIX_PATH:$(pwd)" ./interactive_demo.py
+```
+
+![iiwa14_interactive_drake](https://user-images.githubusercontent.com/4175662/96510753-dcea8380-1212-11eb-89ca-4a9019a8a9cd.gif)

@@ -4,22 +4,18 @@ import os
 
 import numpy
 
-from drake_ros.systems import SystemClock
-from drake_ros.systems import TFPublisher
-
+import rclpy
+import rclpy.time
+from drake_ros.systems import SystemClock, TFPublisher
 from pydrake.geometry import ConnectDrakeVisualizer
 from pydrake.math import RigidTransform
 from pydrake.multibody.parsing import Parser
-from pydrake.systems.analysis import Simulator
 from pydrake.multibody.plant import AddMultibodyPlantSceneGraph
 from pydrake.multibody.tree import JointIndex
-from pydrake.multibody.tree import WeldJoint
+from pydrake.systems.analysis import Simulator
 from pydrake.systems.framework import DiagramBuilder
 from pydrake.systems.primitives import ConstantVectorSource
-
-import rclpy
-import rclpy.time
-from rclpy.qos import QoSProfile, DurabilityPolicy
+from rclpy.qos import DurabilityPolicy, QoSProfile
 from std_msgs.msg import String as StringMsg
 from tf2_ros import TransformBroadcaster
 
@@ -35,19 +31,13 @@ def no_control(plant, builder, model):
 
 
 if __name__ == '__main__':
-    this_dir = os.path.abspath(os.path.dirname(__file__))
-
-    sdf_file_path = os.path.join(this_dir, 'ur10.sdf')
-
-    with open(os.path.join(this_dir, 'ur10.sdf.in'), 'r') as file_in:
-        with open(sdf_file_path, 'w') as file_out:
-            file_out.write(file_in.read().replace('PWD_GOES_HERE', this_dir))
-
     builder = DiagramBuilder()
 
     plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=0.001)
 
     parser = Parser(plant)
+    parser.package_map().PopulateFromEnvironment('AMENT_PREFIX_PATH')
+    sdf_file_path = os.path.join(parser.package_map().GetPath('ur10_description'), 'ur10.sdf')
 
     model_name = "ur10"
     model = parser.AddModelFromFile(sdf_file_path, model_name)

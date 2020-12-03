@@ -1,0 +1,2 @@
+# Suppress diffs on giant obj mesh files
+*.obj -diff
