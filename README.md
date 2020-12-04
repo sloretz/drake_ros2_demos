@@ -71,7 +71,7 @@ AMENT_PREFIX_PATH="$AMENT_PREFIX_PATH:$(pwd)" ./interactive_demo.py
 There is a definition file for a [Singularity](https://sylabs.io/singularity/) container.
 
 First [build and install Singularity](https://sylabs.io/guides/3.7/user-guide/quick_start.html#quick-installation-steps).
-Afterwards, build the Singularity image from the definition file
+Afterwards, build a Singularity sandbox from the definition file.
 
 ```
 singularity build --fakeroot --sandbox ~/drake-ros2-demos.sandbox demos.singularity.def
@@ -84,7 +84,7 @@ $ singularity shell --nv --writable-tmpfs ~/drake-ros2-demos.sandbox
 Singularity> rviz2 -d view.rviz
 ```
 
-Create a shell into the image and run one of the demos
+Create a shell into the sandbox and run one of the demos.
 
 ```console
 $ singularity shell --writable ~/drake-ros2-demos.sandbox
