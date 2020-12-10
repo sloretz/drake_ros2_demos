@@ -64,3 +64,29 @@ AMENT_PREFIX_PATH="$AMENT_PREFIX_PATH:$(pwd)" ./interactive_demo.py
 ```
 
 ![iiwa14_interactive_drake](https://user-images.githubusercontent.com/4175662/96510753-dcea8380-1212-11eb-89ca-4a9019a8a9cd.gif)
+
+
+## Using a Container
+
+There is a definition file for a [Singularity](https://sylabs.io/singularity/) container.
+
+First [build and install Singularity](https://sylabs.io/guides/3.7/user-guide/quick_start.html#quick-installation-steps).
+Afterwards, build a Singularity sandbox from the definition file.
+
+```
+singularity build --fakeroot --sandbox ~/drake-ros2-demos.sandbox demos.singularity.def
+```
+
+Create a shell with access to an NVidia graphics card and run one of the RViz configs for your chosen demo.
+
+```console
+$ singularity shell --nv --writable-tmpfs ~/drake-ros2-demos.sandbox
+Singularity> rviz2 -d view.rviz
+```
+
+Create a shell into the sandbox and run one of the demos.
+
+```console
+$ singularity shell --writable ~/drake-ros2-demos.sandbox
+Singularity> ./ros2_demo.py
+```

@@ -1,0 +1,61 @@
+Bootstrap: docker
+From: osrf/ros:rolling-desktop
+
+%help
+  This is a Singularity definition file for trying out the Drake ROS 2 demos.
+
+%labels
+  MAINTAINER Shane Loretz <sloretz@openrobotics.org>
+
+%files
+  ./ /opt/drake_ros2_demos
+
+%environment
+  SINGULARITY_SHELL=/bin/bash
+
+%post
+  export DEBIAN_FRONTEND=noninteractive
+
+  # Get some tools used below
+  apt-get update
+  apt-get install -y \
+    wget \
+    python-is-python3 \
+    python3-venv
+
+  # Install ROS Rolling
+  # TODO Use main repo when ROS Rolling sync happens
+  echo "deb http://packages.ros.org/ros2-testing/ubuntu `lsb_release -cs` main" > /etc/apt/sources.list.d/ros2-testing.list
+
+  apt-get update
+  apt-get --with-new-pkgs upgrade -y
+  apt-get install -y \
+    ros-rolling-sdformat-urdf
+
+  echo ". /opt/ros/rolling/setup.bash" >> /etc/bash.bashrc
+
+  # Install Drake as of December 2020
+  cd /tmp
+  wget https://drake-packages.csail.mit.edu/drake/nightly/drake-20201201-focal.tar.gz
+  tar -xzf drake-*-focal.tar.gz
+  rm drake-*-focal.tar.gz
+  mv drake /opt
+
+  apt-get install -y $(cat /opt/drake/share/drake/setup/packages-focal.txt)
+
+  python3 -m venv /opt/drake --system-site-packages
+
+  echo ". /opt/drake/bin/activate" >> /etc/bash.bashrc
+
+  # Install the drake_ros Python package into the Drake venv
+
+  . /opt/drake/bin/activate
+  cd /opt/drake_ros2_demos/drake_ros
+  python3 setup.py develop
+
+  echo "cd /opt/drake_ros2_demos" >> /etc/bash.bashrc
+  echo "export AMENT_PREFIX_PATH=\$AMENT_PREFIX_PATH:\$(pwd)" >> /etc/bash.bashrc
+
+  # Cleanup apt files to save disk space
+  rm -rf /var/lib/apt/lists/*
+  apt-get clean
