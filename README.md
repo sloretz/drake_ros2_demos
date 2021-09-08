@@ -4,6 +4,8 @@ This repo shows examples of using [Drake](https://drake.mit.edu/) and [ROS 2](ht
 It uses the pydrake API and is of prototype quality.
 For a similar effort in ROS 1, see [EricCousineau-TRI/repro `drake_ros1_hacks`](https://github.com/EricCousineau-TRI/repro/tree/master/ros/drake_ros1_hacks).
 
+**Most of this is being merged into https://github.com/RobotLocomotion/drake-ros so see that repo for futher development and examples**
+
 ## Prerequisites
 
 * Ubuntu Focal (20.04)
